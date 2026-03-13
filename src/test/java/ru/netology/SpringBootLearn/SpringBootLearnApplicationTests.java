@@ -1,41 +1,43 @@
 package ru.netology.SpringBootLearn;
 
-
-import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 import org.testcontainers.containers.GenericContainer;
 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@RequiredArgsConstructor
 class SpringBootLearnApplicationTests {
 
-	private  TestRestTemplate restTemplate;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-	private static final GenericContainer<?> myAppFirst = new GenericContainer<>("devapp")
-			.withExposedPorts(8080);
+    private static final GenericContainer<?> myAppDev = new GenericContainer<>("devapp")
+            .withExposedPorts(8080);
 
-	private static final GenericContainer<?> myAppSecond = new GenericContainer<>("prodapp")
-			.withExposedPorts(8081);
+    private static final GenericContainer<?> myAppProm = new GenericContainer<>("prodapp")
+            .withExposedPorts(8081);
 
-	@BeforeAll
+    @BeforeAll
     static void setUp() {
-		myAppFirst.start();
-		myAppSecond.start();
-	}
+        myAppDev.start();
+        myAppProm.start();
+    }
 
-	@Test
-	void contextLoads() {
+    @Test
+    @DisplayName("Проверка стенда Dev")
+    void contextLoadsDev() {
+        ResponseEntity<String> entityFirst = restTemplate.getForEntity("http://localhost:" + myAppDev.getMappedPort(8080) + "/profile", String.class);
+		Assertions.assertEquals("Current profile is dev", entityFirst.getBody().toString());
+    }
 
-		ResponseEntity<String> entityFirst = restTemplate.getForEntity("http://localhost:" + myAppFirst.getMappedPort(8080), String.class);
-		ResponseEntity<String> entitySecond = restTemplate.getForEntity("http://localhost:" + myAppSecond.getMappedPort(8081), String.class);
-		System.out.println(entityFirst.getBody());
-		System.out.println(entitySecond.getBody());
-			}
-
+    @Test
+    @DisplayName("Проверка стенда Prom")
+    void contextLoadsProm() {
+        ResponseEntity<String> entitySecond = restTemplate.getForEntity("http://localhost:" + myAppProm.getMappedPort(8081) + "/profile", String.class);
+		Assertions.assertEquals("Current profile is production", entitySecond.getBody().toString());
+    }
 }
